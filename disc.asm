@@ -59,7 +59,8 @@ IP_End:
 IsoFsSector:	iso_setfs 0,IsoFileList,IsoFileList_e		; Two copies of this
 		iso_setfs 1,IsoFileList,IsoFileList_e
 IsoFileList:
-		iso_file "INIT.BIN",SAT_Main,SAT_Main_e
+		iso_file "0INIT.BIN",SAT_Main,SAT_Main_e	; First file ignored
+		iso_file "0INIT.BIN",SAT_Main,SAT_Main_e
 		align $800
 IsoFileList_e:
 

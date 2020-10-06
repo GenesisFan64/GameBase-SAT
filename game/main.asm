@@ -77,21 +77,19 @@ CONTROLLER	equ 	$60FFC00+$13
    		
    		;MAP
    		mov	#0,r0
-   		mov.l	#map_test,r1
-   		mov.l	#VDP2_RAM+$6000,r5
-   		
-   		mov.l	#28,r3
+   		mov	#map_test,r1
+   		mov	#VDP2_RAM+$6000,r5
+   		mov	#(224/8),r3
 .mapyload:
-		mov.l	#40,r4
-   		mov.l	r5,r2
+		mov	#(320/8),r4
+   		mov	r5,r2
 .mapxload:
    		mov.w	@r1+,r0
    		mov.w	r0,@r2
    		add 	#2,r2
    		dt	r4
    		bf	.mapxload
-   		
-   		mov.l	#128,r0
+   		mov	#128,r0
    		add	r0,r5
    		dt	r3
    		bf	.mapyload
@@ -99,15 +97,26 @@ CONTROLLER	equ 	$60FFC00+$13
 ; ----------------------------
 
     		mov	#0,r1
+    		mov 	#0,r2
+       		mov	#VDP2_Regs+$70,r3		;Horizontal
+       		mov	#VDP2_Regs+$74,r4		;Vertical
+       		
 .Loop:
-;   		bsr	VSync
-;     		nop
-  		
-;        		mov.l	#VDP2_Regs+$70,r2		;Horizontal
-;       		mov.w	r1,@r2
-;        		mov.l	#VDP2_Regs+$74,r2		;Vertical
-;       		mov.w	r1,@r2
-;     		add 	#1,r1
+  		bsr	VSync
+    		nop
+
+;   		mov	r1,r0
+;   		shlr8	r0
+;   		exts	r0,r0
+;       		mov.w	r0,@r3
+;   		mov	r2,r0
+;   		shlr8	r0
+;   		exts	r0,r0
+;       		mov.w	r0,@r4
+;       		mov	#$0000002,r0
+;     		add 	r0,r1
+;       		mov	#$0000001,r0
+;     		add 	r0,r2
     		
  		bra	.Loop
    		nop
@@ -115,15 +124,14 @@ CONTROLLER	equ 	$60FFC00+$13
 		ltorg
    		
 ; ----------------------------
-; VSync, i think.
+; VSync, hopefully...
 ; ----------------------------
 
 VSync:
-		mov.l	#VDP2_Regs+4,r14
+		mov	#VDP2_Regs+4,r14
 		mov.w	@r14,r0
 		tst	#%1000,r0
 		bt	VSync
-		
 		rts
    		nop
 		align 4
