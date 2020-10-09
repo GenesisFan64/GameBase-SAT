@@ -32,7 +32,11 @@
 ; 0x06000000 	0x07FFFFFF 	Work RAM High 	 
 
 
-VDP2_VRAM	equ	0x25E00000
-VDP2_CRAM	equ	0x25F00000
-VDP2_REG	equ	0x25F80000
+VDP2_VRAM	equ	$25E00000
+VDP2_CRAM	equ	$25F00000
+VDP2_REG	equ	$25F80000
 
+
+mosaic		equ	$22		; %xxxxyyyy 000r321
+chhctla		equ	$28		; Character control registers	
+chhctlb		equ	$2A

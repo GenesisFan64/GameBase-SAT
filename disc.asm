@@ -9,6 +9,7 @@
 ; ------------------------------------------------
 
 		include "system/macros.asm"
+		include "system/map.asm"
  		dc.b "SEGA SEGASATURN "			; Hardware Identifier
  		dc.b "SEGA HOMEBREW   "			; Maker ID
  		dc.b "T-99901G  "			; Serial
