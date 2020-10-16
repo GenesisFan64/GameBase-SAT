@@ -16,35 +16,26 @@ CONTROLLER	equ 	$60FFC00+$13
 		phase $06004000
 		
 ; ----------------------------
-
-     		mov.l	#0,r1
-     		mov.l	#VDP2_VRAM+$6000,r2
-     		mov.l	#$800,r3
-.cleanup:
-     		mov.w	r1,@r2
-     		add 	#2,r2
-     		dt	r3
-     		bf	.cleanup
-
-; ----------------------------
-;
+; VDP2 register settings
 ; ----------------------------
 
-	; NBG1|NBG0 settings
-	; %00ttssss | %0tttssss
 		mov	#VDP2_REG,r0				; gbr: VDP2 register base
 		ldc	r0,gbr
-      		mov	#(%00010000<<8)|00010000,r0		; MapB | MapA - Cell bpp type
-    		mov.w	r0,@($28,gbr)
-    		
-      		mov	#(%01000000<<8)|10000000,r0		; NBG0 pattern settings
-    		mov.w	r0,@($30,gbr)	
-    		
-		mov	#(($40000)>>5)+(($40000)>>13),r0	; MapB | MapA - tilemap address
-    		mov.w	r0,@($40,gbr)
-		mov	#(($40000)>>5)+(($40000)>>13),r0	; MapD | MapC - tilemap address
-     		mov.w	r0,@($42,gbr)  		
+		mov	#(%00000000<<8)|00000000,r0		; Display OFF
+		mov.w	r0,@(gbr)
 
+      		mov	#(%00000000<<8)|00010000,r0		; MapB | MapA - Cell bpp type
+    		mov.w	r0,@($28,gbr)
+      		mov	#(%00000000<<8)|00000000,r0		; NBG0 Set pattern map are 2words
+    		mov.w	r0,@($30,gbr)
+    		
+    		mov	#%0111011101110111,r0
+    		mov.w	r0,@($3C,gbr)
+		mov	#(($7C000)>>6)+(($7C000)>>14),r0	; MapB(TR) | MapA(TL) - tilemap address
+    		mov.w	r0,@($40,gbr)
+		mov	#(($7C000)>>6)+(($7C000)>>14),r0	; MapD(BR) | MapC(BL) - tilemap address
+     		mov.w	r0,@($42,gbr)  		
+		
 ; ----------------------------
 
     		;ART
@@ -59,14 +50,14 @@ CONTROLLER	equ 	$60FFC00+$13
     		bf	.artload
    		
    		mov	#map_test,r1
-   		mov	#VDP2_VRAM+$40000,r2
+   		mov	#VDP2_VRAM+$7C000,r2
 		mov	#(512/8),r4
    		mov	#(256/8),r3
 		mov	#SAT_LoadMap,r0
 		jsr	@r0
 		nop
    		mov	#map_test,r1
-   		mov	#VDP2_VRAM+$41000,r2
+   		mov	#VDP2_VRAM+$7E000,r2
 		mov	#(512/8),r4
    		mov	#(256/8),r3
 		mov	#SAT_LoadMap,r0
@@ -76,8 +67,6 @@ CONTROLLER	equ 	$60FFC00+$13
 		;PAL
    		mov.l	#pal_test,r1
    		mov.w	@r1,r0
-   		mov	#VDP2_VRAM+$8000,r2
-   		mov.w	r0,@r2
     		mov.l	#VDP2_CRAM,r2
     		mov.l	#256,r3
 .palload:
@@ -87,32 +76,35 @@ CONTROLLER	equ 	$60FFC00+$13
     		dt	r3
     		bf	.palload
 
+		mov	#(%10000001<<8)|00010001,r0		; Display ON, Backscreen ON, Non-interlace, V240, H352
+		mov.w	r0,@(gbr)
+
 ; ----------------------------
 
     		mov	#0,r1
     		mov 	#0,r2
        		mov	#VDP2_REG+$70,r3		;Horizontal
        		mov	#VDP2_REG+$74,r4		;Vertical
-       		mov	#VDP2_REG+$22,r5
+;        		mov	#VDP2_REG+$22,r5
        		mov	#0,r6
 .Loop:
   		bsr	VSync
     		nop
 
-  		mov	r1,r0
-      		mov	r0,@r3
-  		mov	r2,r0
-      		mov	r0,@r4
-      		mov	r6,r0
-      		or	#1,r0
-      		mov.w	r0,@r5
-      		mov	#$100,r0
-      		add	r0,r6
-      		
-      		mov	#$0000010,r0
-    		add 	r0,r1
-      		mov	#$0000010,r0
-    		add 	r0,r2
+;   		mov	r1,r0
+;       		mov	r0,@r3
+;   		mov	r2,r0
+;       		mov	r0,@r4
+; ;       		mov	r6,r0
+; ;       		or	#1,r0
+; ;       		mov.w	r0,@r5
+; 
+;       		mov	#$10,r0
+;       		add	r0,r6
+;       		mov	#$0000080,r0
+;     		add 	r0,r1
+;       		mov	#$0000080,r0
+;     		add 	r0,r2
     		
  		bra	.Loop
    		nop
@@ -145,11 +137,11 @@ SAT_LoadMap:
    		mov	r2,r5
 .mapxload:
    		mov.w	@r1+,r0
-   		mov.w	r0,@r5
-   		add 	#2,r5
+   		mov	r0,@r5
+   		add 	#4,r5
    		dt	r6
    		bf	.mapxload
-   		mov	#128,r0
+   		mov	#128*2,r0
    		add	r0,r2
    		dt	r7
    		bf	.mapyload

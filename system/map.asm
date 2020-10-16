@@ -32,11 +32,27 @@
 ; 0x06000000 	0x07FFFFFF 	Work RAM High 	 
 
 
+; *** NOTES ****
+; Tilemap address:
+; if 1word: (($xxxxx)>>5)+(($xxxxx)>>13)
+; if 2word: (($xxxxx)>>6)+(($xxxxx)>>14)
+
 VDP2_VRAM	equ	$25E00000
 VDP2_CRAM	equ	$25F00000
 VDP2_REG	equ	$25F80000
 
+; ------------------------------------------------
+; VDP2_REG
+; ------------------------------------------------
 
-mosaic		equ	$22		; %xxxxyyyy 000r321
+tvmd		equ	0		; %d000000b | %llvv0hhh
+					; d-Display OFF/ON | b-Border color black/display | l-Interlace mode
+					; v-Vertical resolution (224/240/256PAL/invld)
+					; h-Horizontal resolution (320/352/640/704, bit2 HD screen-only)
+
+mosaic		equ	$22		; %xxxxyyyy | %00eeeee
+					; x-Mosaic X pixels | y-Mosaic Y pixels
+					; eeee - Mosaic Enable bits: RBG0|NBG3|NBG2|NBG1|NBG0
+					
 chhctla		equ	$28		; Character control registers	
 chhctlb		equ	$2A
