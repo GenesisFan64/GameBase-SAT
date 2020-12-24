@@ -1,6 +1,6 @@
 ; ===========================================================================
 ; ----------------------------------------------------------------
-; Memory map
+; SEGA SATURN HARDWARE MAP
 ; ----------------------------------------------------------------
 
 ; 0x00000000 	0x000FFFFF 	Boot ROM 	Repets every 512 kb
@@ -31,28 +31,162 @@
 ; 0x05FF0000 	0x05FFFFFF 	Unknown registers 	Repeats every 256 bytes
 ; 0x06000000 	0x07FFFFFF 	Work RAM High 	 
 
-
-; *** NOTES ****
-; Tilemap address:
-; if 1word: (($xxxxx)>>5)+(($xxxxx)>>13)
-; if 2word: (($xxxxx)>>6)+(($xxxxx)>>14)
-
 VDP2_VRAM	equ	$25E00000
 VDP2_CRAM	equ	$25F00000
 VDP2_REG	equ	$25F80000
 
-; ------------------------------------------------
-; VDP2_REG
-; ------------------------------------------------
+; --------------------------------------------------------
+; VDP2 Registers
+; --------------------------------------------------------
 
-tvmd		equ	0		; %d000000b | %llvv0hhh
-					; d-Display OFF/ON | b-Border color black/display | l-Interlace mode
-					; v-Vertical resolution (224/240/256PAL/invld)
-					; h-Horizontal resolution (320/352/640/704, bit2 HD screen-only)
+tvmd		equ	$00	; TV Mode: (%d000000b<<8)|llvv0hhh
+				;   d - Display OFF/ON
+				;   b - Display Backdrop color OFF/ON
+				;  ll - Interlace modes: None/INVALID/Single/Double
+				;  vv - Vertical resolution:   224/240/256(PAL)/INVALID
+				; hhh - Horizontal resolution: 320/352/640/704, bit 2 is for HD screen-only)
 
-mosaic		equ	$22		; %xxxxyyyy | %00eeeee
-					; x-Mosaic X pixels | y-Mosaic Y pixels
-					; eeee - Mosaic Enable bits: RBG0|NBG3|NBG2|NBG1|NBG0
+exten		equ	$02	; External signal enable: (%000000ls<<8)|000000dx
+				; l - External latch OFF/ON
+				; s - EXSYNC OFF/ON
+				; d - Display area select OFF/ON (x must be set to 1)
+				; x - External screen data input OFF/ON
+
+tvstat		equ	$04	; Screen status [READ ONLY]: (%000000ls<<8)|0000vhop
+				; l - Latch flag
+				; s - Sync flag
+				; v - Inside VBLANK
+				; h - Inside HBLANK
+				; o - Current scanline field EVEN/ODD
+				; p - PAL Mode bit
 					
-chhctla		equ	$28		; Character control registers	
-chhctlb		equ	$2A
+vrsize		equ	$06	; VRAM Size: (%s0000000<<8)|0000vvvv
+				;    s - 4M/8M mode
+				; vvvv - VDP2 chip version (0000 default)
+
+hcnt		equ	$08	; H Counter
+				;      Normal: 00000087 6543210-
+				;      Hi-Res: 00000098 76543210
+				; Excl.Normal: 000000-8 76543210
+				; Excl.Hi-Res: 000000-9 87654321
+
+vcnt		equ	$0A	; V Counter
+				; Single density: 00000087 6543210-
+				; Double density: 00000087 6543210o (o - ODD/EVEN)
+				;   Excl.Monitor: 00000098 76543210
+					
+ramctl		equ	$0E	; RAM control register: (%e0mm00ba<<8)|rrrrrrrr
+				;        e - Coefficient table enable OFF/ON
+				;       mm - Color RAM mode (must set to %01 if using coeff table)
+				;       ba - VRAM partition bits for banks B and A (1bank/2banks)
+				; rrrrrrrr - Rotation data bank bits for RBG0
+				; 
+
+cyca0l		equ	$10	; VRAM Cycle registers
+cyca0u		equ	$12	;
+cyca1l		equ	$14	;
+cyca1u		equ	$16	;
+cyca2l		equ	$18	;
+cyca2u		equ	$1A	;
+cyca3l		equ	$1C	;
+cyca3u		equ	$1E	;
+
+bgon		equ	$20	; Background enable and transparency enable bits:
+				; (%000abcde<<8)|00fghijk
+				;  abcde - Transparent pixel function RBG1|NBG3|NBG2|NBG1|NBG0
+				; fghijk - Background enable bit RBG1|RBG0|NBG3|NBG2|NBG1|NBG0
+
+mzctl		equ	$22	; Mosaic control: (%xxxxyyyy<<8)|000eeeee
+				;    x - X pixels
+				;    y - Y pixels
+				; eeee - Mosaic enable bits: RBG0|NBG3|NBG2|NBG1|NBG0(RBG1)
+
+sfsel		equ	$24	; Special function mode select: %000eeeee
+				; eeeee - Enable mode for RBG0|NBG3|NBG2|NBG1|NBG0
+
+sfcode		equ	$26	; Special function code
+				; (%bbbbbbb<<8)|aaaaaaaa
+				; b - for Special Function Code B
+				; a - for Special Function Code A
+		
+; Character control register
+;
+; chctla: (%00aabbcd<<8)|0aaabbcd (NBG1|NBG0/RBG1)
+; chctlb: (%0aaa0bcd<<8)|00ad00ad (RBG0|NBG3+NBG2)
+; (a)aa - Character color mode: 16/256/2048/32,786/16,770,000/all rest invalid
+;  (b)b - Bitmap screen dot-size: 512x256/512x512/1024x256/1024x512
+;     c - Use bitmap mode OFF/ON
+;     d - Cell size 8x8/16x16
+chctla		equ	$28
+chctlb		equ	$2A
+
+; Bitmap palette number register
+; 
+; bmpna: (%00ab0ccc<<8)|00ab0ccc (NBG1|NBG0)
+; bmpnb:               %00ab0ccc (RBG0)
+;   a - Special priority bit
+;   b - Special color calculation bit
+; ccc - highest 3 bits of palette number
+bmpna		equ	$2C
+bmpnb		equ	$2E
+
+; Pattern name control register
+; 
+; (%ab0000cd<<8)|eeefffff
+;     a - Set pattern name size as 2word or 1word
+;     b - Character suppliment mode No/Yes: Disables flipping and adds 2 more bits to character number
+;     c - Special priority bit if using 1word mode
+;     d - Special calculation bit if using 1word mode
+;   eee - Extra 3 bits for the Palette number
+; fffff - Extra 5 bits for the Character number
+pncn0		equ	$30		; NBG0(RBG1)
+pncn1		equ	$32		; NBG1
+pncn2		equ	$34		; NBG2
+pncn3		equ	$36		; NBG3
+pncr		equ	$38		; RBG0
+
+plsz		equ	$3A		; Plane size (all backgrounds) and screen-over bits for RBG0/RGB1
+
+; Map offset register
+;
+; (%0aaa0aaa<<8)|0aaa0aaa
+; (%00000000<<8)|0aaa0aaa
+; aaa - add $20000 to current MAP (aaa*$20000)
+
+mpofn		equ	$3C		; NBG3|NBG2|NBG1|NBG0
+mpofr		equ	$3E		; Rotation parameter B / Rotation parameter A
+
+; Tilemap address for each MAP in backgrounds
+; If 1word mode: (($xxxxx)>>5)|(($xxxxx)>>13)
+; If 2word mode: (($xxxxx)>>6)|(($xxxxx)>>14)
+;
+; Normal background uses 4 maps
+; Rotating background uses 32 maps
+mpabn0		equ	$40		; NBG0 MapB|MapA
+mpcdn0		equ	$42		; NBG0 MapD|MapC
+mpabn1		equ	$44		; NBG1 MapB|MapA
+mpcdn1		equ	$46		; NBG1 MapD|MapC
+mpabn2		equ	$48		; NBG2 MapB|MapA
+mpcdn2		equ	$4A		; NBG2 MapD|MapC
+mpabn3		equ	$4C		; NBG3 MapB|MapA
+mpcdn3		equ	$4E		; NBG3 MapD|MapC
+
+mpabra		equ	$50		; RBG0 MapB|MapA
+mpcdra		equ	$52		; RBG0 MapD|MapC
+mpefra		equ	$54		; RBG0 MapF|MapE
+mpghra		equ	$56		; RBG0 MapH|MapG
+mpijra		equ	$58		; RBG0 MapJ|MapI
+mpklra		equ	$5A		; RBG0 MapL|MapK
+mpmnra		equ	$5C		; RBG0 MapN|MapM
+mpopra		equ	$5E		; RBG0 MapP|MapO
+mpabrb		equ	$60		; RBG1 MapB|MapA
+mpcdrb		equ	$62		; RBG1 MapD|MapC
+mpefrb		equ	$64		; RBG1 MapF|MapE
+mpghrb		equ	$66		; RBG1 MapH|MapG
+mpijrb		equ	$68		; RBG1 MapJ|MapI
+mpklrb		equ	$6A		; RBG1 MapL|MapK
+mpmnrb		equ	$6C		; RBG1 MapN|MapM
+mpoprb		equ	$6E		; RBG1 MapP|MapO
+
+ovpnra		equ	$B8
+ovpnrb		equ	$BA

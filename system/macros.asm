@@ -71,7 +71,7 @@ iso_file	macro filename,start,end
 		dc.b ((end-start)&$FF),((end-start)>>8&$FF)	; Filesize, little
 		dc.b ((end-start)>>16&$FF),((end-start)>>24&$FF)
 		dc.l end-start					; Filesize, big
-		dc.b (2018-1900)+1				; Year
+		dc.b (2020-1900)+1				; Year
 		dc.b 0,0,0,0,0,0				; TODO
 		dc.b 0						; File flags
 		dc.b 0,0

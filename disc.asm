@@ -34,20 +34,41 @@
 ; ------------------------------------------------
 
 IP_Start:
-		binclude "system/ip.bin"
-; 		phase $60002E80
-; ; ===================================================================
-; ; ----------------------------------------------------------------
-; 		mov	.point,r0
-; 		jsr	@r0
-; 		nop
-; 		bra	*
-; 		align 4
-; ; ------------------------------------------------
-; .point:		dc.l $06004000
-; ; ----------------------------------------------------------------	
-; ; ===================================================================
-; 		dephase
+		phase $06002E80
+		binclude "system/ip.bin"		; Default IP (Clears everything)
+		ds.l 27					; Reserve 27 longs for IP, used by some routines
+
+; ===================================================================
+; ----------------------------------------------------------------
+; All purpose subroutines
+; ----------------------------------------------------------------
+
+; ------------------------------------------------
+; Load map data
+; ------------------------------------------------
+
+SAT_LoadMap:
+   		mov	r3,r7
+.mapyload:
+		mov	r4,r6
+   		mov	r2,r5
+.mapxload:
+   		mov.w	@r1+,r0
+   		mov	r0,@r5
+   		add 	#4,r5
+   		dt	r6
+   		bf	.mapxload
+   		mov	#128*2,r0
+   		add	r0,r2
+   		dt	r7
+   		bf	.mapyload
+   		rts
+   		nop
+   		align 4
+   		ltorg
+
+; ===================================================================
+		dephase
 IP_End:
 
 ; ===========================================================================
@@ -60,8 +81,8 @@ IP_End:
 IsoFsSector:	iso_setfs 0,IsoFileList,IsoFileList_e		; Two copies of this
 		iso_setfs 1,IsoFileList,IsoFileList_e
 IsoFileList:
-		iso_file "0INIT.BIN",SAT_Main,SAT_Main_e	; First file ignored
-		iso_file "0INIT.BIN",SAT_Main,SAT_Main_e
+		iso_file "MAIN.BIN",SAT_Main,SAT_Main_e	; First file ignored
+		iso_file "MAIN.BIN",SAT_Main,SAT_Main_e
 		align $800
 IsoFileList_e:
 

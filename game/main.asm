@@ -7,34 +7,18 @@
 ; VDP2_CRAM	equ	$20000000|$05F00000
 ; VDP2_REG	equ	$20000000|$05F80000
 
-CONTROLLER	equ 	$60FFC00+$13
+
 
 ; ------------------------------------------------
 ; IP
 ; ------------------------------------------------
 
 		phase $06004000
-		
-; ----------------------------
-; VDP2 register settings
-; ----------------------------
-
 		mov	#VDP2_REG,r0				; gbr: VDP2 register base
 		ldc	r0,gbr
 		mov	#(%00000000<<8)|00000000,r0		; Display OFF
-		mov.w	r0,@(gbr)
+		mov.w	r0,@(tvmd,gbr)
 
-      		mov	#(%00000000<<8)|00010000,r0		; MapB | MapA - Cell bpp type
-    		mov.w	r0,@($28,gbr)
-      		mov	#(%00000000<<8)|00000000,r0		; NBG0 Set pattern map are 2words
-    		mov.w	r0,@($30,gbr)
-    		
-    		mov	#%0111011101110111,r0
-    		mov.w	r0,@($3C,gbr)
-		mov	#(($7C000)>>6)+(($7C000)>>14),r0	; MapB(TR) | MapA(TL) - tilemap address
-    		mov.w	r0,@($40,gbr)
-		mov	#(($7C000)>>6)+(($7C000)>>14),r0	; MapD(BR) | MapC(BL) - tilemap address
-     		mov.w	r0,@($42,gbr)  		
 		
 ; ----------------------------
 
@@ -64,6 +48,10 @@ CONTROLLER	equ 	$60FFC00+$13
 		jsr	@r0
 		nop
 		
+.wait_v:		
+		mov.w	@(tvstat,gbr),r0
+		tst	#%1000,r0
+		bt	.wait_v
 		;PAL
    		mov.l	#pal_test,r1
    		mov.w	@r1,r0
@@ -76,8 +64,28 @@ CONTROLLER	equ 	$60FFC00+$13
     		dt	r3
     		bf	.palload
 
+
+; ----------------------------
+
+		mov	#VDP2_REG,r0				; gbr: VDP2 register base
+		ldc	r0,gbr
+		mov	#(%00000000<<8)|00000000,r0		; Display OFF
+		mov.w	r0,@(tvmd,gbr)
+		mov	#(%00000000<<8)|00000000,r0		; Disable all BGs
+		mov.w	r0,@(bgon,gbr)
+		mov	#(($7C000)>>6)|(($7C000)>>14),r0	; MapB(TR) | MapA(TL) - tilemap address
+    		mov.w	r0,@(mpabn0,gbr)
+		mov	#(($7C000)>>6)|(($7C000)>>14),r0	; MapD(BR) | MapC(BL) - tilemap address
+     		mov.w	r0,@(mpcdn0,gbr)
+      		mov	#(%00000000<<8)|00010000,r0		; Character format(s) for NBG1|NBG0/RBG1
+    		mov.w	r0,@(chctla,gbr)
+      		mov	#(%00000000<<8)|00000000,r0		; NBG0 Set pattern map: 2words
+    		mov.w	r0,@(pncn0,gbr)
+		mov	#(%00000000<<8)|00000001,r0		; Enable NBG0 only
+		mov.w	r0,@(bgon,gbr)
+		
 		mov	#(%10000001<<8)|00010001,r0		; Display ON, Backscreen ON, Non-interlace, V240, H352
-		mov.w	r0,@(gbr)
+		mov.w	r0,@(tvmd,gbr)
 
 ; ----------------------------
 
@@ -130,25 +138,25 @@ VSync:
 ; Routines
 ; ------------------------------------------------
 
-SAT_LoadMap:
-   		mov	r3,r7
-.mapyload:
-		mov	r4,r6
-   		mov	r2,r5
-.mapxload:
-   		mov.w	@r1+,r0
-   		mov	r0,@r5
-   		add 	#4,r5
-   		dt	r6
-   		bf	.mapxload
-   		mov	#128*2,r0
-   		add	r0,r2
-   		dt	r7
-   		bf	.mapyload
-   		rts
-   		nop
-   		align 4
-   		ltorg
+; SAT_LoadMap:
+;    		mov	r3,r7
+; .mapyload:
+; 		mov	r4,r6
+;    		mov	r2,r5
+; .mapxload:
+;    		mov.w	@r1+,r0
+;    		mov	r0,@r5
+;    		add 	#4,r5
+;    		dt	r6
+;    		bf	.mapxload
+;    		mov	#128*2,r0
+;    		add	r0,r2
+;    		dt	r7
+;    		bf	.mapyload
+;    		rts
+;    		nop
+;    		align 4
+;    		ltorg
 
 ; ----------------------------
 ; Data
